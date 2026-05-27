@@ -70,6 +70,29 @@ Odpowiedź serwera Allegro:
 - (R1) Konto sprzedażowe Allegro Klienta mogło wymagać dodatkowej weryfikacji przez Allegro Compliance po 4 latach bezczynności. Jeśli tak — proces 2-7 dni roboczych.
 - (R2) Allegro mógł zmienić wymagania dotyczące "after-sales services" (impliedWarranty, returnPolicy) — być może trzeba zaktualizować polityki w panelu sprzedawcy.
 
+### AKTUALIZACJA 2026-05-27 v3 — prawdziwa przyczyna stopu 2021-04-16
+
+Po wgraniu MCP v1.1.0 + użyciu nowego toola `log_tail_grep` na `duo_allegro_logs` widać że ostatnie 3 wystawione aukcje (16.04.2021, 15.04.2021, 15.03.2021) **NIE padły przez token** — token wtedy działał. Allegro zwracało **`VALIDATION_ERROR`** w body odpowiedzi z 3 konkretnymi błędami:
+
+1. **„Z opisu Twojej oferty wynika, że kupujący powinien skontaktować się z Tobą przed dokonaniem zakupu lub przedmiot oferty można zakupić mailowo bądź telefonicznie. Takie działanie może skutkować sfinalizowaniem transakcji poza Allegro. Usuń z opisu niedozwolone zapisy."** — nowa polityka Allegro od ~2021-04 o sfinalizowaniu poza platformą
+2. **„Usuń fragment opisu, który kieruje do zakładki 'O Sprzedającym'."** — hardcoded w `AllegroModel.php`:
+   ```php
+   '<p>Ważne informacje!</p><p>Dane kontaktowe dostępne w zakładce "O sprzedającym"</p>'
+   ```
+3. **„Uzupełnij parametry obowiązkowe: Producent części."** — Allegro dorzuciło ten parametr jako obowiązkowy, mapowanie w `duo_otomoto_parameter_bind` go nie pokrywa
+
+#### Implikacja dla Etapu 4
+
+Lista TODO dla Allegro powiększa się o **3 kolejne fix'y kodowe** (poza wymianą credentials i `refresh_token()` patch):
+
+1. **`AllegroModel::add_auction_from_product`** — przegląd hardcoded description templatów, usunięcie wszystkich odniesień do „skontaktuj się", „mailowo/telefonicznie", „w zakładce O Sprzedającym". Format opisu zgodny z aktualnym regulaminem Allegro.
+2. **Mapowanie parametru "Producent części"** — dodać do default payload `parameters[]` z wartością "Inny producent" jeśli nieznany producent (lub wymusić w panelu admin pole Producent na każdym produkcie).
+3. **Walidacja przed POST** — dorobić `AllegroModel::validate_offer_payload($offer)` które przed POSTem sprawdza description regex'em na zabronione fragmenty.
+
+Łączna estymata Allegro **rośnie z 4-6h na ~8-10h** (wciąż w skali jednego dnia roboczego).
+
+Bardzo prawdopodobne że identyczne validation_errors czekają na Otomoto/OLX po naprawie OAuth — będziemy musieli to obadać iteracyjnie podczas pierwszego live-testu.
+
 ## ROOT CAUSE — Otomoto
 
 ### Co wykazaliśmy live
