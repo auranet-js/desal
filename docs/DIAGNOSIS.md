@@ -70,6 +70,43 @@ Odpowiedź serwera Allegro:
 - (R1) Konto sprzedażowe Allegro Klienta mogło wymagać dodatkowej weryfikacji przez Allegro Compliance po 4 latach bezczynności. Jeśli tak — proces 2-7 dni roboczych.
 - (R2) Allegro mógł zmienić wymagania dotyczące "after-sales services" (impliedWarranty, returnPolicy) — być może trzeba zaktualizować polityki w panelu sprzedawcy.
 
+### AKTUALIZACJA 2026-05-27 v4 — KOREKTA: Otomoto NIE jest martwa
+
+> Wcześniejsza diagnoza Otomoto (v1-v3) była błędna. Po wgraniu MCP v1.1.0 + analizie pełnych logów + live testach widać prawdziwy obraz.
+
+**Otomoto wystawienia faktycznie szły regularnie aż do 2026-04-24 16:00:38** — 13 396 wpisów typu=3 ("dodany do otomoto") rozłożonych równomiernie przez 5 lat (2025: 84-279 ogłoszeń miesięcznie, 2026-03: 280, 2026-04: 87 z urwaniem 24.04).
+
+Po 2026-04-24:
+- type=3 (Otomoto added) — **zero**
+- type=-3 (Otomoto "już ma") — wpisy do 2026-05-12 16:00 (cron leciał, widział że produkty już mają otomoto_id)
+- **brak jakichkolwiek error logów** — system nie próbuje już niczego wystawiać
+
+Live test (curl_proxy z IP serwera Desala):
+- POST `https://www.otomoto.pl/api/open/oauth/token` z `client_id=1169`, `client_secret=ff2d...`, `username=desal.tarnow@gmail.com`, `password=koszycem1` (wartości z duo_options)
+- Otomoto akceptuje client_id+secret (HTTP 400 nie 401), ale zwraca:
+  ```json
+  {"error":"invalid_grant","error_description":"Invalid login or password"}
+  ```
+- → **hasło `koszycem1` w bazie jest nieaktualne**. Otomoto API jest żywe. Klient pewnie zmienił hasło ok. 24.04.2026 (samodzielnie lub przez reset OLX SSO).
+
+Ostatnie ogłoszenie URL (id=30297, `klamka-zewnetrzna-...-ID6HZ3YW.html`) zwraca HTTP 410 Gone — Otomoto wycofało (typowo po 30-45 dniach od wystawienia bez przedłużenia, zgodne z timingiem 24.04 → ~24-26.05).
+
+**Kolejka czekająca:** 238 produktów z `status2=1` i `otomoto_id IS NULL` (gotowe do wystawienia gdy ruszy auth).
+
+#### Nowy plan naprawy Otomoto — wariant A* (REKOMENDOWANE)
+
+1. Pan Dariusz przekazuje aktualne hasło do swojego konta Otomoto (`desal.tarnow@gmail.com` lub powiązane)
+2. Auranet UPDATE `duo_options.admin_modules_otomoto_password` przez MCP query_db (z confirm + whitelist `duo_options`)
+3. Auranet odpala ręcznie `Cron::index2()` lub równoważne — refresh tokenu
+4. Cron `car_timetable()` w naturalny sposób przerobi 238 produktów oczekujących
+5. Monitoring przez `log_tail_grep duo_allegro_logs pattern='otomoto'` — czy wracają nowe wpisy type=3
+
+**Estymata pracy:** 1-2h (wcześniejsze 13-22h dla Wariantu A "OLX Car Parts" było based on błędnej diagnozy).
+
+Wariant Car Parts API (OLX Group) zostaje jako **opcja przyszłościowa** (gdy klient zechce wystawiać też na Autovit/OLX.pl) — nie krytyczny dla powrotu Otomoto.
+
+---
+
 ### AKTUALIZACJA 2026-05-27 v3 — prawdziwa przyczyna stopu 2021-04-16
 
 Po wgraniu MCP v1.1.0 + użyciu nowego toola `log_tail_grep` na `duo_allegro_logs` widać że ostatnie 3 wystawione aukcje (16.04.2021, 15.04.2021, 15.03.2021) **NIE padły przez token** — token wtedy działał. Allegro zwracało **`VALIDATION_ERROR`** w body odpowiedzi z 3 konkretnymi błędami:
