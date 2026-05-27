@@ -10,6 +10,9 @@ secrets/
 
 # Sekrety per-projekt — placeholderowane w src/, prawdziwe w ~/secrets/desal/
 
+# Mirror MCP server (zawiera token w jawnym tekście — NIE commitować)
+kLADte2rC4ckDP8m/
+
 # Backupy MCP — pobierane automatycznie obok plików produkcyjnych
 *.bak-*
 *.bak-rm-*
