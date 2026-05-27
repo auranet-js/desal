@@ -116,41 +116,72 @@ GET https://developer.otomoto.pl/
 
 ### Plan naprawy Otomoto
 
-Tutaj proponujemy **decyzję strategiczną** — pełne lub minimalne podejście.
+> **AKTUALIZACJA 2026-05-27 v2** — po pełnym research API (patrz [API_REFERENCE_OTOMOTO.md](API_REFERENCE_OTOMOTO.md)) okazało się że stary Otomoto API **dalej działa**, a OLX Group oferuje **Car Parts API** z 4 marketplace'ami w jednej integracji. Warianty zaktualizowane.
 
-#### Wariant A — pełna naprawa (rekomendowane jeśli klient sprzedaje też przez Otomoto regularnie)
+#### Wariant A — OLX Car Parts API (REKOMENDOWANE — 4x reach za 1 integrację)
 
-**Krok 1 — po stronie Pana Dariusza:**
-1. Logowanie do panelu OLX (konto: `desal.tarnow@gmail.com`)
-2. Rejestracja jako **OLX Group Partner**: https://www.olx.pl/site/partner/
-3. Złożenie wniosku o dostęp do **OLX Partner API** (proces weryfikacji — typowo 1-4 tygodnie)
-4. Po akceptacji — otrzymanie nowych credentials (client_id, client_secret, dokumentacja)
-5. Przekazanie credentials do Auranet
+OLX Group Car Parts API to **Active + supported** API obejmujący 4 marketplace'y: **Otomoto + Autovit + OLX.pl + OLX.ro**. Jedna integracja wystawia wszędzie.
 
-**Krok 2 — po stronie Auranet:**
-1. Refaktoryzacja `OtomotoModel.php`:
-   - Zmiana endpointu: `www.otomoto.pl/api/open/` → `api.olx.pl/partner/`
-   - Zmiana OAuth: Resource Owner Password Flow → Authorization Code Flow
-   - Dodanie callback'a `api/Otomoto::code_get()` (obecnie stub 374B) — analogiczny do `api/Allegro::code_get()`
-   - Aktualizacja struktur JSON ogłoszenia (kategorie, atrybuty, lokalizacja w nowym formacie)
-   - Aktualizacja `add_advert_from_product()`, `activate_advert()`, `deactivate_advert()`, `getAdvertInfo()`, `get_categories()` itd.
-2. Stworzenie tabeli `duo_shop_otomoto` (analogicznej do `duo_shop_allegro`) z audit-trailem ogłoszeń
-3. Test wystawienia 1 produktu
-4. Migracja istniejących mapowań parametrów (`duo_otomoto_parameter_bind` — 17 rekordów, prawdopodobnie wymaga aktualizacji ID kategorii)
+**Krok 1 — rejestracja (po stronie Auranet lub Pan Dariusz):**
+1. Logowanie do https://developer.olxgroup.com/register (konto OLX OAuth)
+2. "Connect App" — wypełnienie:
+   - Nazwa aplikacji: np. "Desal Parts Integration"
+   - Opis: „Integracja DuoCMS sklepu części z rozbiórek z Car Parts API"
+   - Redirect URI: `https://desal.pl/api/Otomoto/code_get`
+3. Weryfikacja zespołu OLX (czas: 1-2 dni roboczych typowo)
+4. Otrzymanie `client_id` + `client_secret` mailem
 
-**Estymacja Auranet (Otomoto wariant A):** 16-24h pracy programistycznej (2-3 dni) + 4-6h testów.
+**Krok 2 — refaktoryzacja (Auranet):**
+- Przepisanie `OtomotoModel.php`: zmiana endpointu na `api.olx.pl/api/partner/`, zmiana OAuth z password → authorization_code, dodanie callback `api/Otomoto::code_get()` (obecnie stub 374B), aktualizacja JSON struktur (header `Version: 2.0`)
+- Stworzenie `duo_shop_otomoto` (audit-trail jak `duo_shop_allegro`)
+- Test wystawienia 1 produktu na każdym z 4 marketplace'ów
 
-#### Wariant B — minimalny (rekomendowane jeśli klient i tak wystawia na Otomoto ręcznie, niska skala)
+**Estymacja Auranet (Wariant A):** 13-22h pracy = **2-3 dni**.
 
-Pozostawiamy Otomoto wyłączone w pipeline DuoCMSa. Klient wystawia ręcznie przez panel Otomoto Pro (nowy panel OLX). Usuwamy z UI panelu admin Desala opcje Otomoto, żeby nie kusiły do klikania w niedziałającą funkcję.
+**Plus:** wiadomości od kupujących (`GET /threads/{id}/messages`) i statystyki ogłoszeń (`GET /adverts/{id}/statistics`) dostępne automatycznie.
 
-**Estymacja Auranet (Otomoto wariant B):** 2-3h pracy (czyszczenie UI).
+#### Wariant B — Otomoto bezpośrednio (legacy-friendly, najszybszy)
 
-#### Wariant C — odroczone (rekomendowane jeśli klient chce skupić się na Allegro)
+Otomoto **nadal akceptuje rejestracje przez własny formularz** `otomoto.pl/news/rejestracja-api`. Wymaga konta Business Otomoto + danych firmy IT (Auranet aplikuje jako developer aplikacji, nie Pan Dariusz).
 
-Najpierw naprawiamy tylko Allegro. Otomoto omawiamy osobno po obserwacji jak Allegro działa.
+**Krok 1 — rejestracja (Auranet):**
+1. Wypełnienie formularza na https://www.otomoto.pl/news/rejestracja-api
+2. Akcept regulaminu („kluczami API mogą posługiwać się wyłącznie deweloperzy, którzy osobiście tworzą i utrzymują aplikacje")
+3. Czas oczekiwania: niezdefiniowany (od kilku dni do kilku tygodni)
+4. Klucz API uniwersalny — autoryzuje wiele Business accounts (Pan Dariusz musi mieć konto Business)
 
-**Estymacja Auranet (Otomoto wariant C):** 0h teraz, decyzja po 1-2 miesiącach od naprawy Allegro.
+**Krok 2 — minor fix kodu (Auranet):**
+- Sprawdzenie aktualności hasła Pana Dariusza w Otomoto, ewentualny reset
+- Zmiana `admin_modules_otomoto_client_type` z `user` na `dealer` w `duo_options`
+- Korekta `OtomotoModel::get_token()`: walidacja `User-Agent` header (Otomoto wymaga formatu `{email_konta}/1.0`)
+- Test wystawienia 1 ogłoszenia
+
+**Estymacja Auranet (Wariant B):** 3-9h pracy (zależnie od tego ile zmieniło się w payloadach Otomoto między 2021 a 2026).
+
+**Ryzyko Wariantu B:** OLX Group sygnalizuje strategiczną migrację — legacy Otomoto API może być wycofany w nieokreślonej przyszłości.
+
+#### Wariant C — minimalny (klient wystawia ręcznie)
+
+Wyłączamy Otomoto w pipeline DuoCMSa. Klient wystawia przez panel Otomoto Pro. Usuwamy z UI opcje Otomoto żeby nie kusiły do klikania w niedziałającą funkcję.
+
+**Estymacja Auranet (Wariant C):** 2-3h pracy (czyszczenie UI).
+
+#### Wariant D — odroczone
+
+Najpierw tylko Allegro. Otomoto omawiamy po 1-2 miesiącach.
+
+**Estymacja Auranet (Wariant D):** 0h teraz.
+
+### Rekomendacja Auranet (po pełnym research)
+
+**Wariant A (OLX Car Parts API)** — najlepszy ROI bo:
+1. **4x reach** — jedna integracja → Otomoto + Autovit + OLX.pl + OLX.ro
+2. **Future-proof** — strategiczny stack OLX Group
+3. **Active maintenance** — w odróżnieniu od stable-no-support innych OLX API
+4. **Mniej zmian w bazie** — `duo_shop_otomoto` analogiczne do `duo_shop_allegro`
+5. **Multi-tenant ready** — jeden klucz Auranet może obsłużyć wielu klientów (jeśli pojawi się kolejny klient w branży)
+
+Czas Auranet zbliżony do Wariantu pierwotnego A (16-24h), ale **rezultat 4x lepszy**.
 
 ## Czego potrzebujemy od Pana Dariusza
 

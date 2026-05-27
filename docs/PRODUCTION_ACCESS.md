@@ -62,20 +62,22 @@
 ## Zewnętrzne konta — które klient (Pan Dariusz) musi mieć
 
 **Allegro:**
-- Konto sprzedażowe Allegro (seller_id `6265081`, miasto Tarnów, woj. MALOPOLSKIE, kod 33-100)
-- Aplikacja w panelu Allegro Developer (client_id `4d7d03e1...`) — musi mieć ważny consent OAuth
-- Login: do dopytania Pana Dariusza (najpewniej `desaltarnow@gmail.com` lub powiązany)
+- Konto sprzedażowe Allegro (seller_id, lokalizacja Tarnów/MALOPOLSKIE/33-100)
+- Aplikacja w panelu Allegro Developer (client_id w sekrecie) — DEZAKTYWOWANA, do re-rejestracji
+- Login do panelu: do dopytania Pana Dariusza
 
 **Otomoto / OLX Group:**
-- Konto sprzedawcy: `desal.tarnow@gmail.com` (z `duo_options`)
+- Konto sprzedawcy z legacy duo_options (do dopytania Pana Dariusza)
 - Aplikacja partnerska w panelu OLX Group Partner (NIE istnieje — stara była tylko na legacy api.otomoto.pl, trzeba zarejestrować nową w panelu Otomoto Pro / OLX Partner)
 
-**PayU:** POS ID `934436`, klucze w `duo_options` (production)
+**PayU:** klucze w sekrecie (production)
 **P24:** Sandbox URL — najpewniej nieaktywny w prod
-**Google Maps:** klucz `AIzaSyCD5DDEbpaLOU8lUFALxmUlO5XTjPXRDCE` (publiczny site-key — nie wrażliwe)
-**reCAPTCHA v2/v3:** klucze w `duo_options`
+**Google Maps:** klucz w sekrecie — **DO ROTACJI** (patrz [SECURITY_INCIDENT_2026-05-27.md](SECURITY_INCIDENT_2026-05-27.md))
+**reCAPTCHA v2/v3:** klucze w sekrecie
 **InPost:** sandbox JWT (wygasły 2018) — do regeneracji
 **SMTP:** `desal.pl:587` user `noreply@desal.pl`
+
+> **Wszystkie wartości w `~/secrets/desal/api-options-snapshot-YYYY-MM-DD.env`** — NIGDY nie commituj kluczy ani fragmentów kluczy w docs/.
 
 ## Sekrety lokalnie
 
