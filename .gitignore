@@ -1,0 +1,35 @@
+# Sekrety — NIGDY do repo
+.env
+.env.*
+*.env
+!.env.example
+*.local
+secrets/
+*.key
+*.pem
+
+# Sekrety per-projekt — placeholderowane w src/, prawdziwe w ~/secrets/desal/
+
+# Backupy MCP — pobierane automatycznie obok plików produkcyjnych
+*.bak-*
+*.bak-rm-*
+backup-*/
+
+# Edytory
+.idea/
+.vscode/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tmp
+tmp/
+*.tmp
+*.log
+
+# Composer / npm jeśli dojdą
+vendor/
+node_modules/
