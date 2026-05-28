@@ -1,7 +1,13 @@
 # MCP `desal-duocms` — Roadmap rozbudowy
 
-**Bieżąca wersja:** 1.0.0 (14 tooli, mtime 2026-05-27 09:54)
-**Cel:** wersja 1.1.0 (+6 tooli z grup A+B)
+**Bieżąca wersja:** **1.2.0** (25 tooli, mtime 2026-05-28 13:47)
+**Historia wersji:**
+- 1.0.0 (2026-05-27 09:54) — 14 tooli (start)
+- 1.1.0 (2026-05-27 16:21) — +6 tooli (grupa A+B: `code_search`, `file_tree`, `db_schema`, `log_tail_grep`, `php_info`, `curl_proxy`)
+- 1.2.0 (2026-05-28 13:47) — +5 tooli (grupa C: `db_export`, `archive_deploy`, `htaccess_write`, `exec_safe`, `file_diff`). Patrz `docs/decyzje/2026-05-28-php-bump-7.3-do-8.3.md` — MCP rozbudowany w trakcie PHP bumpu, żeby uniknąć ręcznej akcji klienta (phpMyAdmin/WinSCP).
+
+**Cel:** wersja 1.1.0 (+6 tooli z grup A+B) — **ZREALIZOWANE 2026-05-27**
+**Cel:** wersja 1.2.0 (+5 tooli z grupy C) — **ZREALIZOWANE 2026-05-28**
 
 ## Nowe tooly
 

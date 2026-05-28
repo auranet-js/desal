@@ -4,13 +4,15 @@ Szybki przegląd warstw nie-integracyjnych przeprowadzony przy okazji diagnozy O
 
 ## Krytyczne — bezpieczeństwo i utrzymanie
 
-### PHP 7.3.33 — EOL od 5 lat
+### PHP 7.3.33 — EOL od 5 lat ✓ ROZWIĄZANE 2026-05-28
 
 - **End of Life:** 2021-12-06 (oficjalne zakończenie wsparcia przez PHP.net)
 - Bez patchy bezpieczeństwa od ponad 4 lat
 - Każda znana CVE w PHP 7.3 z lat 2022-2026 pozostaje niezałatana
 - Aktualnie wspierane PHP: 8.2 (do 2026-12), 8.3 (do 2027-11), 8.4 (do 2028-12)
 - **Rekomendacja:** migracja na PHP 8.2+ przy okazji prac nad sklepem. DuoCMS na CI 3.x może wymagać drobnych korekt (deprecation removal), ale generalnie kompatybilny z PHP 8.
+
+> **Status 2026-05-28:** ZREALIZOWANE. Bump PHP 7.3.33 → **8.3.31** (LTS do 2027-11) + CI 3.1.5 → 3.1.13 (pierwsza wersja CI 3.x z oficjalnym wsparciem PHP 8). Zero regresji w sklepie. `display_errors on` z .htaccess usunięte przy okazji. Szczegóły: `docs/decyzje/2026-05-28-php-bump-7.3-do-8.3.md`.
 
 ### Brak nagłówków bezpieczeństwa (`curl -I https://desal.pl/`)
 
