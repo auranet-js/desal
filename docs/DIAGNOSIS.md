@@ -103,6 +103,8 @@ Ostatnie ogłoszenie URL (id=30297, `klamka-zewnetrzna-...-ID6HZ3YW.html`) zwrac
 
 **Estymata pracy:** 1-2h (wcześniejsze 13-22h dla Wariantu A "OLX Car Parts" było based on błędnej diagnozy).
 
+> **W mailu do klienta (2026-05-27, faktycznie wysłanym):** zakomunikowane jako „około 3 godziny z diagnostyką" — uwzględnia bufor na ewentualne komplikacje przy aktywacji 238 zaległych produktów. Allegro: „około 8-10 godzin" (1 dzień roboczy). Stawka 200 zł netto/h. Kanoniczna treść wysłana: `~/domains/auratest.pl/public_html/fe4f58fec53ctmp/desal-mail-WYSLANY-do-klienta-2026-05-27.txt`.
+
 Wariant Car Parts API (OLX Group) zostaje jako **opcja przyszłościowa** (gdy klient zechce wystawiać też na Autovit/OLX.pl) — nie krytyczny dla powrotu Otomoto.
 
 ---
@@ -264,3 +266,47 @@ Czas Auranet zbliżony do Wariantu pierwotnego A (16-24h), ale **rezultat 4x lep
 Najmniejszy sensowny next step: **Wariant Allegro pełen + Otomoto wariant C (odroczone)**. To uruchamia mostek do największego kanału sprzedażowego (Allegro) i daje czas na ocenę czy Otomoto się jeszcze opłaca.
 
 Czekamy na decyzję Pana Dariusza co do zakresu i terminu.
+
+---
+
+## AKTUALIZACJA 2026-05-28 — zakres zaakceptowany przez Klienta
+
+Pan Dariusz potwierdził mailem 2026-05-28 12:11 (kopia: `/tmp/claude-mails/27/body.txt`) zakres **14h × 200 zł netto = 2800 zł netto**:
+
+| # | Zadanie | h |
+|---|---|---|
+| 1 | Udrożnienie logowania Otomoto | 3 |
+| 2 | Podniesienie PHP do 8+ | 6 |
+| 3 | Podstawowe SEO (sitemap, robots.txt, meta description, Schema.org karty produktu) | 4 |
+| 4 | Dopisanie funkcjonalności w panelu logowania Otomoto | 1 |
+
+Allegro odpada z zakresu (kod uśpiony, nie kasujemy). Pan Dariusz przesłał aktualne hasło Otomoto (`Koszycem1`) w mailu 12:30.
+
+**Dorzutki gratis** (uzgodnione z Jankiem w sesji 28.05, mieszczą się w buforze):
+- GA4 + Google Search Console + Bing Webmaster + IndexNow (baza pod przyszły upsell)
+- Quick winy panelu admina (patrz `docs/QUICK_WINS.md`)
+
+### Root cause panelu logowania Otomoto (sesja rozpoznawcza 28.05)
+
+Dlaczego Pan Dariusz nie mógł sam zmienić hasła i musiał dzwonić: `application/controllers/duocms/Configuration.php::module_config()` linie 120-122 oraz `admin_modules()` linie 91-99 mają twardą blokadę:
+
+```php
+if(ENVIRONMENT != 'development'){
+    redirect(site_url('duocms/configuration'));
+}
+```
+
+Plus `application/views/duocms/Configuration/menu.php` linia 17 ukrywa cały dropdown „Moduły" w produkcji. Skutek: w panelu prod ekran edycji `admin_modules_otomoto_password` jest fizycznie niedostępny.
+
+**Plan na 1h dopisania funkcjonalności (zadanie #4 z akceptu):** dedykowany kontroler `application/controllers/duocms/Otomoto.php` (przepisać istniejący 3999B test-dev) + widok `application/views/duocms/Otomoto/settings.php`, dostępny ZAWSZE (nie tylko dev), tylko pola Otomoto (nie cały `duo_options`):
+
+- Login (`admin_modules_otomoto_username`), hasło (`admin_modules_otomoto_password`) z `type="password"` + toggle „pokaż"
+- Tryb sandbox/production (`admin_modules_otomoto_mode`)
+- **Przycisk „Sprawdź połączenie"** — live OAuth test przez `OtomotoModel::get_token()` (POST `password` grant), feedback ✅ OK / ❌ „Otomoto odrzuca hasło" / ❌ błąd sieciowy
+- Wyświetlenie: kiedy ostatnio token był ważny (`admin_modules_otomoto_token_expiration` jako human-readable), licznik produktów oczekujących (`SELECT COUNT FROM duo_products WHERE status2=1 AND otomoto_id IS NULL` — obecnie 238)
+- Przycisk „Wymuś odświeżenie tokenu i puść kolejkę" (ręczny trigger `Cron::car_timetable()`)
+- Istniejący `Configuration::module_config('otomoto')` zostaje (dla nas, dev) — dodajemy obok, nie psujemy
+
+### Korekta findings GA/SEO
+
+`docs/TECH_AUDIT_2026-05-27.md` sekcja 3 punkt „Google Analytics" — poprzedni wpis „BRAK" był uproszczeniem. Realnie: zombie `UA-79935351-1` w `application/views/layouts/main.php` linie 193-202 (Universal Analytics wyłączony 2024-07-01). Implikacja: trzeba **wymienić**, nie tylko dodać.

@@ -66,11 +66,13 @@ Sprawdzone z User-Agent Googlebot:
 | Open Graph (`og:title`, `og:image`...) | **BRAK** (nie ma preview w social media) |
 | Twitter Cards | BRAK |
 | JSON-LD Schema.org (Product, Offer, BreadcrumbList) | **BRAK** |
-| Google Analytics / GTM / GA4 | **BRAK** (nie ma żadnych danych o ruchu) |
+| Google Analytics / GTM / GA4 | **ZOMBIE** — wpięty Universal Analytics `UA-79935351-1` wyłączony przez Google 2024-07-01 |
+
+> **Korekta 2026-05-28:** poprzednia wersja wpisu („BRAK") była uproszczeniem. Realny stan: `application/views/layouts/main.php` linie 193-202 mają wpięty `<script async src="https://www.googletagmanager.com/gtag/js?id=UA-79935351-1">` plus `gtag('config', 'UA-79935351-1')`. To Universal Analytics, którego Google wyłączyło 1 lipca 2024 — sklep ma fałszywie aktywny tracker, nie zbiera danych od ~22 miesięcy. Efekt biznesowy ten sam co przy braku (zero danych o ruchu), ale techniczne podejście inne: trzeba **wymienić** UA na GA4 + dorzucić GSC (a nie tylko dodać GA4 od zera).
 
 ### 4. Brak danych ruchu
 
-Brak Google Analytics na stronie. To znaczy że **nie wiadomo**: ile osób wchodzi, skąd, na jakie strony, gdzie odpadają, ile konwertuje. Decyzje biznesowe podejmowane „w ciemno".
+UA-79935351-1 zombie nie zbiera danych od lipca 2024. To znaczy że **nie wiadomo**: ile osób wchodzi, skąd, na jakie strony, gdzie odpadają, ile konwertuje. Decyzje biznesowe podejmowane „w ciemno".
 
 ### 5. Charset niespójny w bazie
 
@@ -83,8 +85,10 @@ Niektóre tabele MySQL używają `latin2`, inne `utf8mb3`. Przy polskich znakach
 1. **Wygenerować i opublikować `sitemap.xml`** — pozwoli Google odkryć 27 tysięcy produktów (1-2h pracy)
 2. **Dorzucić `robots.txt`** — sygnalizuje Google co i jak indeksować (15 min)
 3. **Dodać meta description + h1 + canonical** w szablonach (1-2h pracy)
-4. **Dorzucić Google Analytics 4 + Google Search Console** — żeby zobaczyć rzeczywisty ruch i pozycje (30 min konfiguracji)
+4. **Wymienić zombie UA-79935351-1 na GA4 + dorzucić GSC** — żeby zobaczyć rzeczywisty ruch i pozycje (30 min konfiguracji). **Status 2026-05-28:** uzgodnione z Jankiem jako GRATIS dorzutek do SEO basics (baza pod przyszły upsell).
 5. **Dorzucić nagłówki bezpieczeństwa** w `.htaccess` (30 min)
+
+> **Estymata komunikowana klientowi w mailu z 2026-05-27**: 4-6h dla najpilniejszych spraw SEO (sitemap + robots + meta + Schema.org). Migracja PHP 7.3 → 8.2: 6-8h plus testy.
 
 **Średniopilne:**
 
