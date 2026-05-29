@@ -36,3 +36,8 @@ tmp/
 # Composer / npm jeśli dojdą
 vendor/
 node_modules/
+
+# Auranet 2026-05-29: pliki na produkcji z credentials/state (deploy przez MCP/FTP, nie git)
+/_sitemap-gen.php
+/sitemap.xml
+/indexnow-key.txt

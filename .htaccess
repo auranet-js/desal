@@ -1,0 +1,33 @@
+# CloudLinux: wymuszenie PHP 8.3 (z PHP 7.3.33 EOL od 2021-12-06)
+# Zmiana: 2026-05-28 (PHP bump Auranet)
+AddHandler application/x-httpd-alt-php83___lsphp .php
+
+# Limity wejścia
+php_value max_input_vars 3000
+
+# Security headers (Auranet 2026-05-28)
+<IfModule mod_headers.c>
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    Header always set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# Blokada dostepu do wrazliwych plikow
+<FilesMatch "(^\.|\.bak|\.swp|\.log|composer\.(json|lock)|package\.json|package-lock\.json|_sitemap-gen\.php|_otomoto-check\.php|_otomoto-options.*\.php|_polyfill\.php)$">
+    Require all denied
+</FilesMatch>
+
+# Disable directory listing
+Options -Indexes
+
+# CodeIgniter pretty URLs
+RewriteEngine on
+RewriteBase /
+RewriteCond %{HTTP_HOST} !^ [NC]
+RewriteRule ^(.*)$ http://%{HTTP_HOST}/$1 [L,R=301]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . index.php [L]

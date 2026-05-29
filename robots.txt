@@ -1,0 +1,13 @@
+User-agent: *
+Disallow: /duocms/
+Disallow: /baza/
+Disallow: /system/
+Disallow: /application/
+Disallow: /tmp/
+Disallow: /cache/
+Disallow: /assets/plugins/ckeditor/kcfinder/
+Disallow: /koszyk/
+Disallow: /zamowienie/
+Disallow: /login/
+
+Sitemap: https://desal.pl/sitemap.xml

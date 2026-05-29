@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__claude_ai_Desal__*",
+      "Bash(php /home6/desal/public_html/_otomoto-batch-rest.php)"
+    ],
+    "deny": []
+  }
+}
