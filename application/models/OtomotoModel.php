@@ -204,7 +204,7 @@ class OtomotoModel extends MY_Model {
         $in = [
            "title" => substr($tproduct->name, 0, 50),
     "description" => '<p>Przedmiotem sprzedaży jest:</p><p>'.$tproduct->name.'</p>'.$tproduct->body,
-    "category_id" => 163,
+    "category_id" => !empty($product->otomoto_category_id) ? (int)$product->otomoto_category_id : 163,
     "region_id" => get_option('admin_modules_otomoto_region_id'),
     "city_id" => get_option('admin_modules_otomoto_city_id'),
     "district_id" => null,
