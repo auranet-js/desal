@@ -112,6 +112,18 @@ class Otomoto extends Backend_Controller {
         redirect(site_url('duocms/Otomoto'));
     }
 
+    /**
+     * Auranet 2026-06-30 (pakiet 2000): odśwież cache kategorii Otomoto z API (kategorie + parts-type).
+     */
+    public function refresh_categories() {
+        $this->load->model('CategoryOtomotoModel');
+        $n = (new CategoryOtomotoModel())->refresh_from_api();
+        $this->session->set_flashdata('msg', $n
+            ? ['success', "Zaktualizowano kategorie Otomoto z API ($n szt.) wraz z listą parts-type."]
+            : ['danger', 'Nie udało się pobrać kategorii z Otomoto — sprawdź połączenie/token.']);
+        redirect(site_url('duocms/Otomoto'));
+    }
+
     // === DEV / LEGACY (zachowane) ===
 
     public function dev_settings_region(){

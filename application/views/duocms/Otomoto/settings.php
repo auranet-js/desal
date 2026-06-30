@@ -46,6 +46,10 @@ $msg = $this->session->flashdata('msg');
                 <form method="POST" action="<?= site_url('duocms/Otomoto/refresh_token_now'); ?>" style="display:inline;">
                     <button type="submit" class="btn btn-warning">Wymuś odświeżenie tokenu</button>
                 </form>
+                <form method="POST" action="<?= site_url('duocms/Otomoto/refresh_categories'); ?>" style="display:inline;">
+                    <button type="submit" class="btn btn-success">Odśwież kategorie z Otomoto</button>
+                </form>
+                <p class="help-block" style="margin-top:6px;">Pobiera aktualną listę kategorii i rodzajów części z Otomoto do panelu (szablony). Rób, gdy Otomoto doda/zmieni kategorie.</p>
 
                 <hr>
 
