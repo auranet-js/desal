@@ -380,6 +380,40 @@ $sizes = getimagesize($data['full_path']);
         return $added;
     }
 
+    /**
+     * Auranet 2026-06-30 (pakiet 2000): kopiuje WSZYSTKIE zdjęcia szkicu do produktu.
+     * Z duo_sketch_photos; fallback na legacy pojedyncze sketch->image lub car->image.
+     */
+    public function copy_sketch_photos_to_product($sketch, $car, $product_id){
+        $this->load->model('ProductPhotoModel');
+        $photos = $this->get_sketch_photos($sketch->id);
+        if(empty($photos)){
+            if(!empty($sketch->image)){
+                $photos = [ (object)['name' => $sketch->image, 'src' => FCPATH.'uploads/sketch/'.$sketch->id.'/'] ];
+            } elseif(!empty($car->image)){
+                $photos = [ (object)['name' => $car->image, 'src' => FCPATH.'uploads/cars/'.$car->id.'/'] ];
+            } else {
+                return 0;
+            }
+        } else {
+            foreach($photos as $p){ $p->src = FCPATH.'uploads/sketch/'.$sketch->id.'/'; }
+        }
+        $n = 0;
+        foreach($photos as $p){
+            $photo = new ProductPhotoModel();
+            $photo->product_id = $product_id;
+            $photo->insert();
+            $dest = FCPATH.'uploads/products/'.$photo->product_id.'/'.$photo->id.'/';
+            if (!is_dir($dest)) { mkdir($dest, 0777, true); mkdir($dest.'mini/', 0777, true); }
+            @copy($p->src.$p->name, $dest.$p->name);
+            @copy($p->src.'mini/'.$p->name, $dest.'mini/'.$p->name);
+            $photo->name = $p->name;
+            $photo->update();
+            $n++;
+        }
+        return $n;
+    }
+
     public function check_if_part_already_added($car_id, $sketch_item_id){
         $this->db->where('car_id', $car_id);
         $this->db->where('sketch_item_id', $sketch_item_id);
@@ -508,30 +542,10 @@ $sizes = getimagesize($data['full_path']);
         $product->sketch_item_id = $sketch->template_item_id;
         $product->delivery_id = $template->delivery_id;
         $product->insert_product();
-        
-        $photo = new ProductPhotoModel();
-        $photo->product_id = $product->id;
-        $photo->insert();
-        $dest = FCPATH.'uploads/products/'.$photo->product_id.'/'.$photo->id.'/';
-		if (!is_dir($dest)) {
-			mkdir($dest, 0777, true);
-                        mkdir($dest."mini/", 0777, true);
-		}
-        if(!empty($sketch->image)){
-        $source = FCPATH . 'uploads/sketch/' . $sketch->id .'/';
-        
-        copy($source.$sketch->image, $dest.$sketch->image);
-        copy($source.'mini/'.$sketch->image, $dest.'mini/'.$sketch->image);
-        $photo->name = $sketch->image;
-        } else {
-            $source = FCPATH . 'uploads/cars/' . $car->id .'/';
-        
-        copy($source.$car->image, $dest.$car->image);
-        copy($source.'mini/'.$car->image, $dest.'mini/'.$car->image);
-        $photo->name = $car->image;
-        }
-        $photo->update();
-        
+
+        $this->copy_sketch_photos_to_product($sketch, $car, $product->id);
+
+
         $tproduct = new ProductTranslationModel();
         $tproduct->product_id = $product->id;
         $tproduct->name = $sketch->name;
