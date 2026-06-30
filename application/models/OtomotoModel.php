@@ -201,6 +201,13 @@ class OtomotoModel extends MY_Model {
            $params['parts-type'] = $this->fallback_parts_type($product->offer_category_id);
        }
 
+       // Auranet 2026-06-30 (pakiet 2000): ustaw parts-category (selecttree). Bez tego Otomoto
+       // wpisuje domyślnie "others" i część ląduje jako nieskategoryzowana. Mapujemy z parts-type
+       // na zweryfikowany leaf "-others" właściwej gałęzi.
+       if (empty($params['parts-category'])) {
+           $params['parts-category'] = $this->parts_type_to_parts_category($params['parts-type']);
+       }
+
         $in = [
            "title" => substr($tproduct->name, 0, 50),
     "description" => '<p>Przedmiotem sprzedaży jest:</p><p>'.$tproduct->name.'</p>'.$tproduct->body,
@@ -279,6 +286,34 @@ class OtomotoModel extends MY_Model {
         ];
         $cat = (int)$offer_category_id;
         return isset($MAP[$cat]) ? $MAP[$cat] : 'inne';
+    }
+
+    /**
+     * Auranet 2026-06-30 (pakiet 2000): mapowanie parts-type -> parts-category (selecttree).
+     * Klucze "-others" zweryfikowane na żywo w API (categories/163). Nieznane -> 'others'.
+     */
+    private function parts_type_to_parts_category($parts_type)
+    {
+        $MAP = [
+            'karoseria'                          => 'body-parts-others',
+            'elementy-wnetrza'                   => 'interior-others',
+            'uklad-zawieszenia'                  => 'syspension-others',
+            'oswietlenie'                        => 'lighting-others',
+            'uklad-napedowy'                     => 'drive-system-others',
+            'uklad-elektryczny'                  => 'ignition-others',
+            'uklad-chlodzenia'                   => 'engine-cooling-others',
+            'uklad-hamulcowy'                    => 'braking-others',
+            'ogrzewanie-wentylacja-klimatyzacja' => 'air-cond-others',
+            'silnik'                             => 'engine-others',
+            'felgi'                              => 'rims',
+            'kola'                               => 'wheels-rims-with-tires',
+            'opony'                              => 'tires',
+            'uklad-wydechowy'                    => 'exhaust-others',
+            'uklad-paliwowy'                     => 'fuel-others',
+            'układ-hydrauliczny'                 => 'hydr-air-suspension-others',
+            'uklad-kierowniczy'                  => 'steering-others',
+        ];
+        return isset($MAP[$parts_type]) ? $MAP[$parts_type] : 'others';
     }
 
     public function activate_advert($id){
