@@ -293,6 +293,93 @@ $sizes = getimagesize($data['full_path']);
         return false;
     }
     
+    // === Auranet 2026-06-30 (pakiet 2000): wiele zdjęć szkicu (duo_sketch_photos) ===
+
+    public function get_sketch_photos($sketch_id){
+        $this->db->where('sketch_id', $sketch_id);
+        $this->db->order_by('`order`', 'ASC');
+        $this->db->order_by('id', 'ASC');
+        return $this->db->get('duo_sketch_photos')->result();
+    }
+
+    public function add_sketch_photo($sketch_id, $name, $order = 0){
+        $this->db->insert('duo_sketch_photos', [
+            'sketch_id' => $sketch_id,
+            'name' => $name,
+            'order' => $order,
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
+        return $this->db->insert_id();
+    }
+
+    public function delete_sketch_photo($photo_id){
+        $row = $this->db->get_where('duo_sketch_photos', ['id' => $photo_id])->row();
+        if(empty($row)){ return false; }
+        $dir = FCPATH . 'uploads/sketch/' . $row->sketch_id . '/';
+        if(is_file($dir.$row->name)){ @unlink($dir.$row->name); }
+        if(is_file($dir.'mini/'.$row->name)){ @unlink($dir.'mini/'.$row->name); }
+        $this->db->where('id', $photo_id)->delete('duo_sketch_photos');
+        // jeśli to było zdjęcie trzymane jako legacy duo_car_sketches.image — podmień na pierwsze pozostałe
+        $sketch = $this->get_sketch($row->sketch_id);
+        if(!empty($sketch) && $sketch->image === $row->name){
+            $rest = $this->get_sketch_photos($row->sketch_id);
+            $this->db->where('id', $row->sketch_id)->update('duo_car_sketches', ['image' => !empty($rest) ? $rest[0]->name : '']);
+        }
+        return true;
+    }
+
+    /**
+     * Multi-upload zdjęć szkicu (pole formularza images[]). Resize 1200 + mini 400 (jak saveSketchImage).
+     * Wstawia do duo_sketch_photos; jeśli legacy image puste — ustawia pierwsze jako duo_car_sketches.image.
+     * Zwraca liczbę dodanych zdjęć.
+     */
+    public function save_sketch_photos($id){
+        if(empty($_FILES['images']) || empty($_FILES['images']['name'])){ return 0; }
+        $names = $_FILES['images']['name'];
+        if(!is_array($names)){ $names = [$names]; }
+
+        $targetDir = FCPATH . 'uploads/sketch/' . $id;
+        if (!is_dir($targetDir)) { mkdir($targetDir, 0777, true); }
+        if (!is_dir($targetDir . '/mini')) { mkdir($targetDir . '/mini', 0777, true); }
+
+        require_once APPPATH . 'third_party/SimpleImage.php';
+
+        $existing = $this->get_sketch_photos($id);
+        $order = count($existing);
+        $added = 0;
+        $count = count($names);
+        for($i = 0; $i < $count; $i++){
+            if(empty($_FILES['images']['tmp_name'][$i]) || $_FILES['images']['error'][$i] !== 0){ continue; }
+            $ext = pathinfo($names[$i], PATHINFO_EXTENSION);
+            $fname = md5(uniqid('', true)) . ($ext ? '.' . strtolower($ext) : '');
+            $full = $targetDir . '/' . $fname;
+            if(!move_uploaded_file($_FILES['images']['tmp_name'][$i], $full)){ continue; }
+
+            $sizes = getimagesize($full);
+            if($sizes !== false){
+                $img = new abeautifulsite\SimpleImage($full);
+                $x = $sizes[0]; $y = $sizes[1];
+                if($x > 1200){ $y = round((1200/$x)*$y); $x = 1200; }
+                $img->adaptive_resize($x, $y)->save($full);
+                $sizes2 = getimagesize($full);
+                $mx = $sizes2[0]; $my = $sizes2[1];
+                if($mx > 400){ $my = round((400/$mx)*$my); $mx = 400; }
+                $img->adaptive_resize($mx, $my)->save($targetDir . '/mini/' . $fname);
+            }
+            $this->add_sketch_photo($id, $fname, $order++);
+            $added++;
+        }
+        // legacy image = pierwsze zdjęcie szkicu (dla starych widoków / miniatury), jeśli puste
+        $all = $this->get_sketch_photos($id);
+        if(!empty($all)){
+            $sketch = $this->get_sketch($id);
+            if(empty($sketch->image)){
+                $this->db->where('id', $id)->update('duo_car_sketches', ['image' => $all[0]->name]);
+            }
+        }
+        return $added;
+    }
+
     public function check_if_part_already_added($car_id, $sketch_item_id){
         $this->db->where('car_id', $car_id);
         $this->db->where('sketch_item_id', $sketch_item_id);
