@@ -128,9 +128,10 @@ class Cars extends Backend_Controller {
                         'attributes_json_otomoto' => json_encode(array_merge($this->input->post('parameters'),['title'=>$this->input->post("name")])),
                     ];
             $res = $this->CarModel->update_sketch($this->input->post('id'), $args);
-            
+
             $this->CarModel->saveSketchImage($this->input->post('id'));
-            
+            $this->CarModel->save_sketch_photos($this->input->post('id'));
+
             if ($res) {
                 $this->setOkay('Część została zapisana.');
             } else {
@@ -139,12 +140,12 @@ class Cars extends Backend_Controller {
 
             //$category->saveImage();
 
-            
+
 
             //redirect('duocms/offer_categories/edit/' . $category->id);
         }
 
-        
+
         $this->load->helper('form');
         $page = empty($this->input->get('page')) ? 1 : $this->input->get('page') ;
         $limit = 20;
@@ -159,8 +160,8 @@ class Cars extends Backend_Controller {
         foreach($otomotoGroupsIds as $otoCategoryId){
             $oto_parameteres[$otoCategoryId] = $this->OtomotoModel->get_category_data($otoCategoryId)->parameters;
         }
-        
-        
+
+
         if(!empty($parts)){
             foreach($parts as $part){
                 $part->template = $this->TemplatesModel->get_template_item($part->template_item_id);
@@ -209,12 +210,13 @@ public function ajax_edit($id) {
                         'attributes_json_otomoto' => json_encode(array_merge(json_decode($this->input->post('parameters'),true),['title'=>$this->input->post("name")])),
                     ];
             $res = $this->CarModel->update_sketch($this->input->post('id'), $args);
-            
+
             $res2 = $this->CarModel->saveSketchImage($this->input->post('id'));
-            
+            $this->CarModel->save_sketch_photos($this->input->post('id'));
+
             //$category->saveImage();
 
-            
+
 
             //redirect('duocms/offer_categories/edit/' . $category->id);
         }
@@ -267,7 +269,7 @@ public function ajax_edit($id) {
             'items' => $items
         ]);
     }
-    
+
     public function product_from_sketch($sketch_id){
         $this->load->model('TemplatesModel');
         $this->load->model('ProductModel');
@@ -294,40 +296,20 @@ public function ajax_edit($id) {
         $product->sketch_item_id = $sketch->template_item_id;
         $product->delivery_id = $template->delivery_id;
         $product->insert_product();
-        
-        $photo = new ProductPhotoModel();
-        $photo->product_id = $product->id;
-        $photo->insert();
-        $dest = FCPATH.'uploads/products/'.$photo->product_id.'/'.$photo->id.'/';
-		if (!is_dir($dest)) {
-			mkdir($dest, 0777, true);
-                        mkdir($dest."mini/", 0777, true);
-		}
-        if(!empty($sketch->image)){
-        $source = FCPATH . 'uploads/sketch/' . $sketch->id .'/';
-        
-        copy($source.$sketch->image, $dest.$sketch->image);
-        copy($source.'mini/'.$sketch->image, $dest.'mini/'.$sketch->image);
-        $photo->name = $sketch->image;
-        } else {
-            $source = FCPATH . 'uploads/cars/' . $car->id .'/';
-        
-        copy($source.$car->image, $dest.$car->image);
-        copy($source.'mini/'.$car->image, $dest.'mini/'.$car->image);
-        $photo->name = $car->image;
-        }
-        $photo->update();
-        
+
+        $this->CarModel->copy_sketch_photos_to_product($sketch, $car, $product->id);
+
+
         $tproduct = new ProductTranslationModel();
         $tproduct->product_id = $product->id;
         $tproduct->name = $sketch->name;
         $tproduct->body = $sketch->description;
         $tproduct->lang = 'pl';
         $tproduct->insert();
-        
+
         echo $product->id;
     }
-    
+
     public function edit_products($sketch_id){
         $this->load->model('TemplatesModel');
         $this->load->model('ProductModel');
@@ -348,41 +330,16 @@ public function ajax_edit($id) {
         $product->type = $sketch->attributes_json;
         $product->type2 = $sketch->attributes_json_otomoto;
         $product->update_product();
-        $photo_old = $product->findAllPhotos();
-        if(!empty($photo_old[0]) && $photo_old[0]->name == $sketch->image){
-            // do nothing it should be same photo
-        }else {
-        $photo = new ProductPhotoModel();
-        $photo->product_id = $product->id;
-        $photo->insert();
-        $dest = FCPATH.'uploads/products/'.$photo->product_id.'/'.$photo->id.'/';
-		if (!is_dir($dest)) {
-			mkdir($dest, 0777, true);
-                        mkdir($dest."mini/", 0777, true);
-		}
-        if(!empty($sketch->image)){
-        $source = FCPATH . 'uploads/sketch/' . $sketch->id .'/';
-        
-        copy($source.$sketch->image, $dest.$sketch->image);
-        copy($source.'mini/'.$sketch->image, $dest.'mini/'.$sketch->image);
-        $photo->name = $sketch->image;
-        } else {
-            $source = FCPATH . 'uploads/cars/' . $car->id .'/';
-        
-        copy($source.$car->image, $dest.$car->image);
-        copy($source.'mini/'.$car->image, $dest.'mini/'.$car->image);
-        $photo->name = $car->image;
-        }
-        $photo->update();
-        }
+        foreach($product->findAllPhotos() as $op){ if(is_object($op) && method_exists($op,'delete')){ $op->delete(); } }
+        $this->CarModel->copy_sketch_photos_to_product($sketch, $car, $product->id);
         $tproduct = $product->getTranslation('pl');
         $tproduct->name = $sketch->name;
         $tproduct->body = $sketch->description;
         $tproduct->update();
-        
+
         echo $product->id;
     }
-    
+
     function add_auction($product_id = null){
         if(empty($product_id)){
            echo 'coś poszło nie tak';
@@ -397,7 +354,7 @@ public function ajax_edit($id) {
             } else {
                 echo 'aukcja już istnieje';
             }
-        }  
+        }
     }
     function edit_auction($product_id = null){
         if(empty($product_id)){
@@ -409,10 +366,10 @@ public function ajax_edit($id) {
         if($product->status){
             $this->load->model('AllegroModel');
             $this->AllegroModel->edit_auction_from_product($product->id);
-        }  
+        }
     }
-    
-    
+
+
     function car_delete($car_id) {
         $this->db->where('car_id', $car_id);
         $q = $this->db->get('duo_products')->result();
@@ -428,7 +385,7 @@ public function ajax_edit($id) {
                 $prod->delete();
             }
         }
-        
+
         $this->load->helper('file');
         $this->db->where('car_id', $car_id);
         $z = $this->db->get('duo_car_sketches')->result();
@@ -441,15 +398,15 @@ public function ajax_edit($id) {
         }
         $this->db->where('car_id', $car_id);
         $this->db->delete('duo_car_sketches');
-        
-        
+
+
         $this->db->where('id', $car_id);
         $this->db->delete('duo_cars');
-        
+
         redirect(site_url('duocms/cars'));
     }
 
-    
+
     public function add_to_timetable($product_id){
         $this->db->where('product_id', $product_id);
         $q = $this->db->get('duo_allegro_timetable');
@@ -461,5 +418,5 @@ public function ajax_edit($id) {
         ]);
         }
     }
-   
+
 }
