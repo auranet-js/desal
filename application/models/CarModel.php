@@ -356,7 +356,8 @@ $sizes = getimagesize($data['full_path']);
             if(!move_uploaded_file($_FILES['images']['tmp_name'][$i], $full)){ continue; }
 
             $sizes = getimagesize($full);
-            if($sizes !== false){
+            // Guard: pomijamy GD dla ekstremalnych wymiarow (ochrona memory_limit przy fallbacku bez resize w przegladarce)
+            if($sizes !== false && ($sizes[0] * $sizes[1]) <= 30000000){
                 $img = new abeautifulsite\SimpleImage($full);
                 $x = $sizes[0]; $y = $sizes[1];
                 if($x > 1200){ $y = round((1200/$x)*$y); $x = 1200; }

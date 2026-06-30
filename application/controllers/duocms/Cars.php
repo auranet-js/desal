@@ -172,6 +172,7 @@ class Cars extends Backend_Controller {
                     $part->allegro_attributes = [];
                 }
                 $part->otomoto_attributes = $oto_parameteres[empty($part->otomoto_category_id) ? 163 : $part->otomoto_category_id];
+                $part->photos = $this->CarModel->get_sketch_photos($part->id);
             }
         }
         $this->layout('duocms/Cars/edit', [
@@ -406,6 +407,12 @@ public function ajax_edit($id) {
         redirect(site_url('duocms/cars'));
     }
 
+
+    public function delete_sketch_photo($photo_id){
+        $this->load->model('CarModel');
+        $this->CarModel->delete_sketch_photo($photo_id);
+        redirect($this->input->server('HTTP_REFERER'));
+    }
 
     public function add_to_timetable($product_id){
         $this->db->where('product_id', $product_id);
