@@ -84,7 +84,7 @@ class Cars extends Backend_Controller {
                         "otomoto" => $template->otomoto,
                         "otomoto_category_id" => $template->otomoto_category_id,
                         'attributes_json' => '',
-                        'attributes_json_otomoto' => json_encode([ 'parts-type' => $template->otomoto_part_type, 'title' => $template->name.' '.$car->brand.' '. $car->name ])
+                        'attributes_json_otomoto' => json_encode(array_merge([ 'parts-type' => $template->otomoto_part_type ], (!empty($template->otomoto_parts_category) ? [ 'parts-category' => $template->otomoto_parts_category ] : []), [ 'title' => $template->name.' '.$car->brand.' '. $car->name ]))
                     ];
                     $this->CarModel->save_sketch($args);
                 }

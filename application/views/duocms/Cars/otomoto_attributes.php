@@ -1,4 +1,4 @@
-<?php if (!empty($otomoto)) : 
+<?php if (!empty($otomoto)) :
 $saved_array = (array) $saved;
 ?>
 <select name="otomoto_category_id" class="form-control">
@@ -14,8 +14,9 @@ $saved_array = (array) $saved;
     ?>
 </select>
 <input type="hidden" name="parameters[parts-type]" value="<?= $part->template->otomoto_part_type; ?>" />
+<input type="hidden" name="parameters[parts-category]" value="<?= !empty($part->template->otomoto_parts_category) ? $part->template->otomoto_parts_category : ''; ?>" />
     <?php foreach ($otomoto as $a): ?>
-        <?php if(in_array($a->code, ['price', 'parts-type', 'compatibility', 'video'] )) { continue; }//== 'price' || $a->code == 'parts-type' ) { continue; } ?>
+        <?php if(in_array($a->code, ['price', 'parts-type', 'parts-category', 'compatibility', 'video'] )) { continue; }//== 'price' || $a->code == 'parts-type' ) { continue; } ?>
         <?php
         // PHP 8 fix: otomoto_part_type bywa NULL (138/279 itemów szablonu) → klucz visibility "0"
         // jak w OtomotoModel::createVisibilityArray(). Guard ?? [] zapobiega TypeError in_array(null).
@@ -26,28 +27,28 @@ $saved_array = (array) $saved;
         }
         if($a->code == 'wheels-rims'){
             if(!in_array($part->template->otomoto_part_type, ['kola'])) { continue; }
-        } 
+        }
         if($a->code == 'wheels-tyres'){
             if(!in_array($part->template->otomoto_part_type, ['kola'])) { continue; }
-        } 
+        }
         if($a->code == 'rims-type'){
             if(!in_array($part->template->otomoto_part_type, ['felgi'])) { continue; }
-        } 
+        }
         if($a->code == 'rims-inches'){
             if(!in_array($part->template->otomoto_part_type, ['felgi'])) { continue; }
-        } 
+        }
         if($a->code == 'tyres-type'){
             if(!in_array($part->template->otomoto_part_type, ['opony'])) { continue; }
-        } 
+        }
               if($a->code == 'tyres-inches'){
             if(!in_array($part->template->otomoto_part_type, ['opony'])) { continue; }
-        } 
+        }
               if($a->code == 'tyres-width'){
             if(!in_array($part->template->otomoto_part_type, ['opony'])) { continue; }
-        } 
+        }
               if($a->code == 'tyres-profile'){
             if(!in_array($part->template->otomoto_part_type, ['opony'])) { continue; }
-        } 
+        }
         ?>
         <?php if (TRUE || $a->required) : ?>
             <p><?= $a->labels->pl; ?> <?= ($a->required) ? "*" : ''; ?></p>
@@ -90,7 +91,7 @@ $saved_array = (array) $saved;
                     break;
                 case 'input':
                     $val = !empty($saved_array[$a->code]) ? $saved_array[$a->code] : ( $a->code == 'title' ? $part->name : ''); ?>
-                    <input name="parameters[<?= $a->code; ?>]" value="<?= $val; ?>"  class="form-control" /> 
+                    <input name="parameters[<?= $a->code; ?>]" value="<?= $val; ?>"  class="form-control" />
                <?php     break;
                 default:
                     break;

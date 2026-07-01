@@ -37,7 +37,7 @@ class Templates extends Backend_Controller {
                                 'template_id' => $template_id,
                                 'name' => $pdata['name'][$i],
                                 'allegro_category' => $pdata['allegro_category'][$i],
-                                'otomoto_part_type' => $pdata['otomoto_part_type'][$i],
+                                'otomoto_part_type' => $pdata['otomoto_part_type'][$i], 'otomoto_parts_category' => isset($pdata['otomoto_parts_category'][$i]) ? $pdata['otomoto_parts_category'][$i] : null,
                                 'otomoto_category_id' => $pdata['otomoto_category'][$i],
                                 'category_id' => $pdata['parent_id'][$i],
                                 'delivery_id' => $pdata['delivery_id'][$i],
@@ -74,7 +74,8 @@ class Templates extends Backend_Controller {
             'parents' => $categories,
             'deliveries' => $deliveries_array,
             'oto_parts' => $oto_parts,
-            'oto_categories' => $otoMotoCategories
+            'oto_categories' => $otoMotoCategories,
+            'oto_parts_category' => $this->CategoryOtomotoModel->get_parts_category_cached()
         ]);
     }
 
@@ -100,7 +101,8 @@ class Templates extends Backend_Controller {
                  'parents' => $categories,
                 'deliveries' => $deliveries_array,
                 'oto_parts' => $oto_parts,
-                'oto_categories' => $this->CategoryOtomotoModel->get_all_cached()
+                'oto_categories' => $this->CategoryOtomotoModel->get_all_cached(),
+                'oto_parts_category' => $this->CategoryOtomotoModel->get_parts_category_cached()
             ]);
         }
     }
@@ -118,7 +120,7 @@ class Templates extends Backend_Controller {
                          $args = array(
                                 'name' => $pdata['name'][$i],
                                 'allegro_category' => $pdata['allegro_category'][$i],
-                              'otomoto_part_type' => $pdata['otomoto_part_type'][$i],
+                              'otomoto_part_type' => $pdata['otomoto_part_type'][$i], 'otomoto_parts_category' => isset($pdata['otomoto_parts_category'][$i]) ? $pdata['otomoto_parts_category'][$i] : null,
                              'otomoto_category_id' => $pdata['otomoto_category'][$i],
                                 'category_id' => $pdata['parent_id'][$i],
                              'delivery_id' => $pdata['delivery_id'][$i],
@@ -133,7 +135,7 @@ class Templates extends Backend_Controller {
                                 'template_id' => $id,
                                 'name' => $pdata['name'][$i],
                                 'allegro_category' => $pdata['allegro_category'][$i],
-                                 'otomoto_part_type' => $pdata['otomoto_part_type'][$i],
+                                 'otomoto_part_type' => $pdata['otomoto_part_type'][$i], 'otomoto_parts_category' => isset($pdata['otomoto_parts_category'][$i]) ? $pdata['otomoto_parts_category'][$i] : null,
                                 'otomoto_category_id' => $pdata['otomoto_category'][$i],
                                 'category_id' => $pdata['parent_id'][$i],
                                 'delivery_id' => $pdata['delivery_id'][$i],
@@ -168,6 +170,7 @@ class Templates extends Backend_Controller {
         $data['oto_parts'] = $oto_parts;
         $data['deliveries'] = $deliveries_array;
         $data['oto_categories'] = $this->CategoryOtomotoModel->get_all_cached();
+        $data['oto_parts_category'] = $this->CategoryOtomotoModel->get_parts_category_cached();
         $this->layout('duocms/Templates/edit_form', $data);
     }
 

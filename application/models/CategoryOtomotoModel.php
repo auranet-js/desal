@@ -53,6 +53,8 @@ class CategoryOtomotoModel extends CI_Model
 
         // Auranet 2026-06-29: przy okazji cache opcji parts-type (Rodzaj części) z kat. 163.
         $this->refresh_parts_type_cache($otomotoModel);
+        // Auranet 2026-06-30: cache liści parts-category (selecttree, ~850) do pickera podkategorii.
+        $this->refresh_parts_category_cache($otomotoModel);
 
         return count($rows);
     }
@@ -117,6 +119,41 @@ class CategoryOtomotoModel extends CI_Model
         if (!is_file($f)) {
             return [];
         }
+        $arr = json_decode(file_get_contents($f), true);
+        return is_array($arr) ? $arr : [];
+    }
+
+    private function parts_category_cache_path()
+    {
+        return FCPATH . 'uploads/otomoto_parts_category_cache.json';
+    }
+
+    /**
+     * Auranet 2026-06-30 (pakiet 2000, picker podkategorii): cache liści parts-category
+     * (selecttree ~850) z kat. 163. [ leafKey => polski_label ].
+     */
+    public function refresh_parts_category_cache($otomotoModel = null)
+    {
+        if ($otomotoModel === null) { $otomotoModel = new OtomotoModel(); }
+        $oto_category = $otomotoModel->get_category_data();
+        if (empty($oto_category->parameters)) { return 0; }
+        $leaves = [];
+        foreach ($oto_category->parameters as $op) {
+            if ($op->code != 'parts-category') { continue; }
+            foreach ($op->options as $z => $o) { $leaves[$z] = $o->pl; }
+        }
+        if (empty($leaves)) { return 0; }
+        file_put_contents($this->parts_category_cache_path(), json_encode($leaves, JSON_UNESCAPED_UNICODE));
+        return count($leaves);
+    }
+
+    /**
+     * Auranet 2026-06-30: liście parts-category z cache [ leafKey => polski_label ].
+     */
+    public function get_parts_category_cached()
+    {
+        $f = $this->parts_category_cache_path();
+        if (!is_file($f)) { return []; }
         $arr = json_decode(file_get_contents($f), true);
         return is_array($arr) ? $arr : [];
     }
